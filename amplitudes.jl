@@ -227,7 +227,7 @@ function Ω_aibj!(Ω_aibj, γo, γv, t1s, t2s, λ, λdag)
     Ω_aibj[a, i, b, j] -= γv[b] * γo[k] * t1s[a,l] * t1s[c,i] * t1s[d,j] * L_ovov[k,d,l,c]
     Ω_aibj[a, i, b, j] += γo[j] * γv[c] * t1s[a,k] * t1s[b,l] * t1s[d,i] * L_ovov[k,d,l,c]
    end
-   symmetric_sum!(no, nv, Ω_aibj)
+   #symmetric_sum!(no, nv, Ω_aibj)
 end
 
 function symmetric_sum!(no, nv, aibj)
