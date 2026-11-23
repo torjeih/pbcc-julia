@@ -617,7 +617,7 @@ println("λdags: ", λdag)
     η = zeros(size(ω))
     η = η_func(η, ω)
 
-    tol = 1e-10
+    tol = 1e-6
     AT_func = make_A_left_trans(nocc, nvir, λ, λdag)
 	AT = AT_func(ω)
 	ωbar = zeros(size( ω,1))
