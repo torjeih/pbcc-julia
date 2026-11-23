@@ -570,15 +570,11 @@ C = hf.mo_coeff
 
 	#println("no: ", nocc, ", nv: ", nvir, "nao_A: ", naoA)
     global F_oo, F_ov, F_vo, F_vv = construct_fock(mol, hf)
-println(diag(F_oo))
-println(diag(F_vv))
 
     global g_oooo, g_ooov, g_oovo, g_ovoo, g_vooo, g_oovv, g_ovov, g_ovvo, g_voov, g_vovo, g_vvoo, g_ovvv, g_vovv, g_vvov, g_vvvo, g_vvvv = @time construct_g_mo(mol, hf)
 	create_Ls(g_oooo, g_ooov, g_oovo, g_ovoo, g_vooo, g_oovv, g_ovov, g_ovvo, g_voov, g_vovo, g_vvoo, g_ovvv, g_vovv, g_vvov, g_vvvo, g_vvvv)
 
 	λ_strengths = [1e-6, 1e-5, 1e-4, 5e-4, 1e-3, 1e-2, 5e-2]
-    λdag[1:nocc].=0.1
-    λ[(nocc+1):(nocc+nvir)].=0.1
 
 	#run_multiple_lambdas(nocc, nvir, mol, hf, λ_strengths)
 	output_line(output_file, "λs set to $λ\nλdags set to $λdag\n")
