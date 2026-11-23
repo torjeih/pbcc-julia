@@ -51,12 +51,6 @@ function make_pbcc_E_func(nocc, nvir, λ, λdag)
     end
 end
 
-function symmetric_sum!(no, nv, aibj)
-	Ω2 = copy(aibj)
-	@tensoropt aibj[a, i, b, j] += Ω2[b, j, a, i]
-	aibj.*=0.5
-end
-
 function create_u(no, nv, taibj)
 	us = zeros(nv, no, nv, no)
 	@tensoropt begin
@@ -491,18 +485,10 @@ end
 function solve_ω(Ω_func, A_func, no, nv, λ, λdag, tol = 1e-6)
 	println("Entered function")
 	ω = zeros(Float64, (no+nv+no*nv+no*nv*no*nv))
-ω[1:2].=-0.03345285130136979
-ω[3:4].=0.029220840240760076
-ω[5]=8.824673291337335e-5
-ω[5+3]=8.824673291337335e-5
-ω[(2+2+2*2+1)]=-0.11534048774597826
-ω[end]=-0.11534048774597826
-	ω_test = copy(ω)
 	dω = copy(ω)
 	Ω = copy(ω)
 	Ω_func(Ω, ω)
 	res = maximum(abs, Ω)
-	res_test = copy(res)
 	norm_Ω = norm(Ω)
 
 	step_size = 1
@@ -511,22 +497,17 @@ function solve_ω(Ω_func, A_func, no, nv, λ, λdag, tol = 1e-6)
 	i = 1
 	while res > tol && i < 80 && res < 1e8
 		println("i = $i, |Ω| = ", res)
-                println("|Ω_i| = ", maximum(abs, Ω[1:no]))
-                println("|Ω_a| = ", maximum(abs, Ω[(no+1):(no+nv)]))
-                println("|Ω_ai| = ", maximum(abs, Ω[(no+nv+1):(no+nv+no*nv)]))
-                println("|Ω_aibj| = ", maximum(abs, Ω[(no+nv+no*nv+1):end]))
+        println("|Ω_i| = ", maximum(abs, Ω[1:no]))
+        println("|Ω_a| = ", maximum(abs, Ω[(no+1):(no+nv)]))
+        println("|Ω_ai| = ", maximum(abs, Ω[(no+nv+1):(no+nv+no*nv)]))
+        println("|Ω_aibj| = ", maximum(abs, Ω[(no+nv+no*nv+1):end]))
                 
-		
-                #Ω[(no+nv+1):(no+nv+no*nv)].=0
-		#ω[(no+nv+1):(no+nv+no*nv)].=0
 		A = A_func(ω)
 		iter_method(dω, A, Ω, verbose = true, abstol=max(res, tol) * 1e-2)		#Calculate using iteration method
 		
 		axpy!(-step_size, dω, ω)
 		
 		Ω_func(Ω, ω)
-                #Ω[(no+nv+1):(no+nv+no*nv)].=0
-		#ω[(no+nv+1):(no+nv+no*nv)].=0
 		res = maximum(abs, Ω)
 		new_norm = norm(Ω)
 		dω .*= new_norm/norm_Ω
@@ -564,7 +545,7 @@ function solve_pbcc(mol, λ, λdag, output_file = 0, n_eig=0)
     
     nocc = mol.nelectron ÷ 2
     nvir = nao - nocc
-C = hf.mo_coeff
+	C = hf.mo_coeff
 	
 	#get_AOs(nocc, nvir, mol, hf)
 
@@ -574,7 +555,7 @@ C = hf.mo_coeff
     global g_oooo, g_ooov, g_oovo, g_ovoo, g_vooo, g_oovv, g_ovov, g_ovvo, g_voov, g_vovo, g_vvoo, g_ovvv, g_vovv, g_vvov, g_vvvo, g_vvvv = @time construct_g_mo(mol, hf)
 	create_Ls(g_oooo, g_ooov, g_oovo, g_ovoo, g_vooo, g_oovv, g_ovov, g_ovvo, g_voov, g_vovo, g_vvoo, g_ovvv, g_vovv, g_vvov, g_vvvo, g_vvvv)
 
-	λ_strengths = [1e-6, 1e-5, 1e-4, 5e-4, 1e-3, 1e-2, 5e-2]
+	λ_strengths = [1e-6, 1e-5, 1e-4, 5e-4, 1e-3, 1e-2, 5e-2] #For running multiple lambdas
 
 	#run_multiple_lambdas(nocc, nvir, mol, hf, λ_strengths)
 	output_line(output_file, "λs set to $λ\nλdags set to $λdag\n")
@@ -585,7 +566,7 @@ C = hf.mo_coeff
 println("λs: ", λ)
 println("λdags: ", λdag)
 
-    ω = @time solve_ω(Ω_func, A_func, size(F_oo, 1), size(F_vv, 1), λ, λdag, 1e-8)
+    ω = @time solve_ω(Ω_func, A_func, size(F_oo, 1), size(F_vv, 1), λ, λdag, 1e-6)
 
 	γo_final, γv_final, t1s_final, t2s_final = parameters_untangle(nocc, nvir, ω)
 
@@ -910,8 +891,8 @@ O      4.720088    1002.149309   -1.219625
 H      3.789240    1002.113041   -0.975796
 "
 
-H2O_2 = pyscf.gto.Mole()
-H2O_2.atom = "
+NH = pyscf.gto.Mole()
+NH.atom = "
 N     -1003.731512   -0.230146   -2.258078
 H     -1003.415694    0.482764   -1.613451
 H     -1002.902397   -0.623504   -2.683955
@@ -930,14 +911,14 @@ H     -1004.236325    0.247210   -2.993476
 "
 H2O.basis = "cc-pvdz"
 H2O2.basis = "cc-pvdz"
-H2O_2.basis = "cc-pvdz"
-H2O_2.build()
+NH.basis = "cc-pvdz"
+NH.build()
 H2O2.build()
 H2O.build()
 
 
-λ, λdag = make_binary_λ(H2O2, 0.0000)
+λ, λdag = make_binary_λ(H2O, 0.0000)
 λ.= 0.0
 λdag.= 0.0
-ω_start = solve_pbcc(H2O2, λ, λdag, "AOdensity2H2O.out")
+ω_start = solve_pbcc(H2O, λ, λdag, "AOdensity2H2O.out")
 
